@@ -2,7 +2,7 @@ use sdl2::{keyboard::Keycode};
 use std::collections::HashMap;
 
 pub enum GameInput {
-    Move(f32, f32),
+    Move(f64, f64),
     Jump,
     None,
 }
@@ -34,8 +34,8 @@ impl InputManager {
     pub fn get_game_inputs(&self) -> Vec<GameInput> {
         let mut inputs = Vec::new();
 
-        let mut dx: f32 = 0.0;
-        let mut dy: f32 = 0.0;
+        let mut dx: f64 = 0.0;
+        let mut dy: f64 = 0.0;
 
         if self.is_key_down(Keycode::W) || self.is_key_down(Keycode::Up) { dy = -1.0; }
         if self.is_key_down(Keycode::A) || self.is_key_down(Keycode::Left) { dx = -1.0; }

@@ -30,6 +30,7 @@ pub fn main() {
 
     let mut canvas = window
         .into_canvas()
+        .present_vsync()
         .build()
         .unwrap();
 
@@ -45,19 +46,19 @@ pub fn main() {
     let mut input_manager = InputManager::new();
 
     let now = SystemTime::now();
-    let mut last_tick_t: Option<f32> = None;
+    let mut last_tick_t: Option<u128> = None;
 
     'running: loop {
-        let dt: f32;
+        let dt: f64;
 
         match last_tick_t {
             Some(last_t) => {
-                let t = now.elapsed().unwrap().as_millis() as f32;
-                dt = (t - last_t) / FPS;
+                let t = now.elapsed().unwrap().as_millis();
+                dt = (t as f64 - last_t as f64) / FPS;
                 last_tick_t = Some(t);
             },
             None => {
-                let t = now.elapsed().unwrap().as_millis() as f32;
+                let t = now.elapsed().unwrap().as_millis();
                 dt = 1.0;
                 last_tick_t = Some(t);
             }
@@ -81,7 +82,7 @@ pub fn main() {
             }
         }
 
-        scene.update(input_manager.get_game_inputs(), dt);
+        scene.update(input_manager.get_game_inputs(), last_tick_t.unwrap(), dt);
         scene.render(&mut canvas);
 
         canvas.present();
