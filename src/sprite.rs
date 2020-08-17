@@ -1,13 +1,12 @@
 use crate::geometry::{SimpleRect, Vec2};
 use sdl2::{
-    rect::Rect,
     render::{Canvas, Texture},
     video::Window,
 };
 
 pub struct Sprite<'a> {
     tex: &'a Texture<'a>,
-    sdl_rect: Option<Rect>,
+    sdl_rect: Option<sdl2::rect::Rect>,
     pub rect: SimpleRect,
     pub angle: f64,
     pub flip_horizontal: bool,
@@ -56,7 +55,7 @@ impl<'a> Sprite<'a> {
     }
 
     pub fn update_sdl_rect(&mut self) {
-        self.sdl_rect = Some(Rect::new(
+        self.sdl_rect = Some(sdl2::rect::Rect::new(
             self.rect.pos.x as i32,
             self.rect.pos.y as i32,
             self.rect.size.x as u32,

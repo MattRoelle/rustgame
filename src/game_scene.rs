@@ -1,10 +1,11 @@
 use crate::{asset_cache::Assets, scene::Scene, sprite::Sprite, input::GameInput};
-use crate::constants::*;
+use crate::{tiles::Tilemap, constants::*};
 use sdl2::{video::Window, render::Canvas};
 
 pub struct GameScene<'a> {
     assets: &'a Assets<'a>,
     player: Sprite<'a>,
+    tilemap: Tilemap<'a>,
     player_direction: f64,
     target_direction: f64,
     switched_t: u128
@@ -17,7 +18,8 @@ impl<'a> GameScene<'a> {
             player: Sprite::new(&assets.red_rect, 0.0, 0.0, 20.0, 20.0),
             player_direction: 1.0,
             target_direction: 1.0,
-            switched_t: 0
+            switched_t: 0,
+            tilemap: Tilemap::new(0.0, 0.0, &assets.test_level, &assets.tilemap)
         }
     }
 
@@ -52,6 +54,7 @@ impl<'a> Scene for GameScene<'a> {
     }
 
     fn render(&mut self, canvas: &mut Canvas<Window>) {
+        self.tilemap.draw(canvas);
         self.player.draw(canvas);
     }
 }

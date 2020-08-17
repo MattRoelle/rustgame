@@ -13,11 +13,11 @@ impl Display for Vec2 {
 }
 
 impl Vec2 {
-    fn distance_to(&self, v2: Vec2) -> f64 {
+    pub fn distance_to(&self, v2: Vec2) -> f64 {
         return ((v2.y - self.y).powf(2.0) + (v2.x - self.x).powf(2.0)).sqrt()
     }
 
-    fn new(x: f64, y: f64) -> Self {
+    pub fn new(x: f64, y: f64) -> Self {
         Self {
             x,
             y
