@@ -1,13 +1,10 @@
-use crate::{asset_cache::Assets, input::GameInput, scene::Scene, sprite::Sprite};
-use crate::{
-    constants::*,
-    tiles::Tilemap,
-};
 use crate::ui::*;
+use crate::{asset_cache::Assets, input::GameInput, scene::Scene, sprite::Sprite};
+use crate::{constants::*, tiles::Tilemap};
 use sdl2::{pixels::Color, render::Canvas, video::Window};
 use stretch::{
     geometry::{Rect, Size},
-    style::{AlignItems, Dimension, JustifyContent, Style, FlexDirection, Overflow},
+    style::{AlignItems, Dimension, FlexDirection, JustifyContent, Overflow, Style},
 };
 
 pub struct GameScene<'a> {
@@ -22,6 +19,14 @@ pub struct GameScene<'a> {
 
 impl<'a> GameScene<'a> {
     fn build_ui() -> UIGraph {
+        fn block(brightness: u8) -> ViewBuilder {
+            view()
+                .flex_grow(1.0)
+                .bg_color(Color::RGB(brightness, brightness, brightness))
+                .margin_pt_all(5.0)
+                .clone()
+        }
+
         UIGraph::new(
             view()
                 .width_px(SCREEN_WIDTH as f32)
@@ -30,13 +35,15 @@ impl<'a> GameScene<'a> {
                 .flex_direction(FlexDirection::Column)
                 .padding_pt_all(10.0)
                 .children(&mut vec![
-                    view().flex_grow(1.0).bg_color(Color::RGB(120, 120, 120)).margin_pt_all(10.0),
-                    view().flex_grow(1.0).bg_color(Color::RGB(120, 200, 120)).margin_pt_all(10.0).children(&mut vec![
-                        view().flex_grow(1.0).bg_color(Color::RGB(200, 120, 120)),
-                        view().flex_grow(1.0).bg_color(Color::RGB(120, 120, 200)),
+                    &mut block(80).children(&mut vec![
+                        &mut block(120)
+                            .flex_direction(FlexDirection::Column)
+                            .children(&mut vec![&mut block(160), &mut block(160)]),
+                        &mut block(120),
+                        &mut block(120),
                     ]),
-                    view().flex_grow(1.0).bg_color(Color::RGB(120, 120, 120)).margin_pt_all(10.0),
-                ])
+                    &mut block(80),
+                ]),
         )
     }
 

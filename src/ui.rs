@@ -1,30 +1,10 @@
 use sdl2::{pixels::Color, render::Canvas, video::Window};
 use stretch::{
-    geometry::{Rect, Size},
+    geometry::{Rect, Size, Point},
     node::Node,
     result::Layout,
     style::{Dimension, Style, FlexDirection, AlignItems, AlignContent, JustifyContent},
 };
-
-pub fn pointrect_all(inner: f32) -> Rect<Dimension> {
-    Rect {
-        start: Dimension::Points(inner),
-        end: Dimension::Points(inner),
-        top: Dimension::Points(inner),
-        bottom: Dimension::Points(inner),
-    }
-}
-
-pub fn pointrect(start: f32, top: f32, end: f32, bottom: f32) -> Rect<Dimension> {
-    Rect {
-        start: Dimension::Points(start),
-        end: Dimension::Points(end),
-        top: Dimension::Points(top),
-        bottom: Dimension::Points(bottom),
-    }
-}
-
-pub struct RenderStyle {}
 
 pub struct UIGraph {
     stretch: stretch::node::Stretch,
@@ -60,7 +40,7 @@ impl UIGraph {
     }
 
     pub fn draw(&mut self, canvas: &mut Canvas<Window>) {
-        self.root.draw(&mut self.stretch, canvas);
+        self.root.draw(&mut self.stretch, canvas, None);
     }
 }
 
@@ -79,9 +59,11 @@ pub struct UINode {
     layout_style: Style,
     children: Vec<UINode>,
     node_type: UINodeType,
+    // name: String
 }
 
 impl UINode {
+    // pub fn new(name: String, node_type: UINodeType, layout_style: Style, children: Vec<UINode>) -> Self {
     pub fn new(node_type: UINodeType, layout_style: Style, children: Vec<UINode>) -> Self {
         Self {
             node: None,
@@ -89,6 +71,7 @@ impl UINode {
             layout_style,
             children,
             node_type,
+            // name
         }
     }
 
@@ -118,6 +101,9 @@ impl UINode {
         &mut self,
         stretch: &mut stretch::node::Stretch,
     ) -> Result<(), stretch::Error> {
+        for child in self.children.iter_mut() {
+            child.compute_layout(stretch)?
+        }
         stretch.compute_layout(
             self.node.expect("Must call compute_stretch_node() first"),
             Size::undefined(),
@@ -125,18 +111,33 @@ impl UINode {
         Ok(())
     }
 
-    pub fn draw(&mut self, stretch: &mut stretch::node::Stretch, canvas: &mut Canvas<Window>) {
+    pub fn draw(&mut self, stretch: &mut stretch::node::Stretch, canvas: &mut Canvas<Window>, pos: Option<Point<f32>>) {
         let layout = stretch
             .layout(self.node.expect("Must call compute_layout() first"))
             .expect("Erorr calling stretch.layout");
+
+        // dbg!(&self.name, &layout);
+
+        let cumulative_pos: Point<f32>;
+        match pos {
+            Some(v) => {
+                cumulative_pos = Point {
+                    x: v.x + layout.location.x,
+                    y: v.y + layout.location.y
+                };
+            },
+            None => {
+                cumulative_pos = Point { x: 0.0, y: 0.0 };
+            }
+        }
 
         match self.node_type {
             UINodeType::View(v) => {
                 canvas.set_draw_color(v.background_color.unwrap_or(Color::RGBA(0, 0, 0, 0)));
                 canvas
                     .fill_rect(sdl2::rect::Rect::new(
-                        layout.location.x as i32,
-                        layout.location.y as i32,
+                        cumulative_pos.x as i32,
+                        cumulative_pos.y as i32,
                         layout.size.width as u32,
                         layout.size.height as u32,
                     ))
@@ -144,8 +145,9 @@ impl UINode {
             }
         };
 
+
         for child in self.children.iter_mut() {
-            child.draw(stretch, canvas);
+            child.draw(stretch, canvas, Some(cumulative_pos));
         }
     }
 }
@@ -220,7 +222,8 @@ pub trait LayoutStyleBuilder {
 pub struct ViewBuilder {
     layout_style: Style,
     child_nodes: Vec<ViewBuilder>,
-    style: ViewStyle
+    style: ViewStyle,
+    // name: String
 }
 
 impl Into<UINodeBuilder> for ViewBuilder {
@@ -254,14 +257,17 @@ impl ViewBuilder {
     }
 
     fn build(&self) -> UINode {
+        // UINode::new(self.name.clone(), UINodeType::View(self.style), self.layout_style, self.child_nodes.iter().map(|child| { child.build() }).collect())
         UINode::new(UINodeType::View(self.style), self.layout_style, self.child_nodes.iter().map(|child| { child.build() }).collect())
     }
 }
 
+// pub fn view(name: &str) -> ViewBuilder {
 pub fn view() -> ViewBuilder {
     ViewBuilder {
         layout_style: Style::default(),
         child_nodes: vec![],
-        style: ViewStyle::default()
+        style: ViewStyle::default(),
+        // name: String::from(name)
     }
 }
