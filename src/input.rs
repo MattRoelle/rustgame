@@ -8,12 +8,14 @@ pub enum GameInput {
 }
 
 pub struct InputManager {
+    inputs: Vec<GameInput>, 
     pub keyboard_states: HashMap<Keycode, bool>,
 }
 
 impl InputManager {
     pub fn new() -> Self {
         Self {
+            inputs: vec![],
             keyboard_states: HashMap::new()
         }
     }
@@ -24,6 +26,13 @@ impl InputManager {
 
     pub fn process_keyup(&mut self, keycode: Keycode) {
         self.keyboard_states.insert(keycode, false);
+
+        match keycode {
+            Keycode::Space => {
+                self.inputs.push(GameInput::Jump)
+            },
+            _ => {}
+        }
     }
 
     pub fn is_key_down(&self, keycode: Keycode) -> bool {
@@ -31,9 +40,7 @@ impl InputManager {
         && *self.keyboard_states.get(&keycode).unwrap()
     }
 
-    pub fn get_game_inputs(&self) -> Vec<GameInput> {
-        let mut inputs = Vec::new();
-
+    pub fn collect_game_inputs(&mut self) -> Vec<GameInput> {
         let mut dx: f64 = 0.0;
         let mut dy: f64 = 0.0;
 
@@ -45,9 +52,9 @@ impl InputManager {
         if dx.abs() > 0.0 || dy.abs() > 0.0 {
             let mag = (dy.powf(2.0) + dx.powf(2.0)).sqrt();
             let theta = dy.atan2(dx);
-            inputs.push(GameInput::Move(theta.cos() * mag, theta.sin() * mag))
+            self.inputs.push(GameInput::Move(theta.cos() * mag, theta.sin() * mag))
         }
 
-        return inputs;
+        return self.inputs.drain(..).collect();
     }
 }

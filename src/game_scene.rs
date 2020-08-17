@@ -8,34 +8,73 @@ use stretch::{
 };
 
 
+#[derive(Debug, Copy, Clone)]
 pub struct UIProps {
     count: i32,
 }
 
 struct GameSceneUI {
+    props: UIProps,
     graph: UIGraph
 }
 
 impl GameSceneUI {
     pub fn new() -> Self {
+        let initial_props = UIProps {
+            count: 0
+        };
+
         Self {
-            graph: UIGraph::new(Self::render(UIProps {
-                count: 1
-            }))
+            graph: UIGraph::new(Self::render(initial_props)),
+            props: initial_props
         }
+    }
+
+    pub fn increment(&mut self) {
+        self.props.count += 1;
+        self.props.count %= 8;
+        self.set_props(self.props);
     }
 }
 
-impl UIComponent<UIProps> for GameSceneUI {
+impl UIComponent for GameSceneUI {
+    type Props = UIProps;
+
     fn render(props: UIProps) -> ViewBuilder {
+        let mut top_children = {
+            let mut ret = Vec::new();
+            for i in 0..props.count {
+                let block = block!(120, 120, 120)
+                    .clone()
+                    .border_width(2)
+                    .border_color(Color::RGB(255, 255, 255))
+                    .bg_color(Color::RGB((i* 20) as u8, (i* 20) as u8, (i*20) as u8))
+                    .clone();
+
+                ret.push(block)
+            }
+            ret
+        };
+
+        let mut bottom_children = {
+            let mut ret = Vec::new();
+            for i in 0..(7 - props.count) {
+                let block = block!(120, 120, 120).clone();
+                ret.push(block)
+            }
+            ret
+        };
+
         fullscreen!()
-            .bg_color(Color::RGB(40, 40, 40))
+            .bg_color(Color::RGB(240, 40, 40))
             .flex_direction(FlexDirection::Column)
             .padding_pt_all(10.0)
             .children(&mut vec![
                 block!(80, 80, 80)
-                    .children(&mut vec![block!(120, 120, 120), block!(120, 120, 120)]),
-                block!(80, 80, 80),
+                    .children(&mut top_children.iter_mut().collect()),
+                block!(80, 80, 80)
+                    .flex_direction(FlexDirection::Column)
+                    .children(&mut bottom_children.iter_mut().collect()),
             ])
             .clone()
     }
@@ -89,7 +128,10 @@ impl<'a> Scene for GameScene<'a> {
                     } else if dx < 0.0 {
                         self.switch_direction(t, -1.0);
                     }
-                }
+                },
+                GameInput::Jump => {
+                    self.ui.increment();
+                },
                 _ => {}
             }
         }

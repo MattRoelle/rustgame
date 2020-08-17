@@ -93,7 +93,7 @@ pub fn main() {
             }
         }
 
-        scene.update(input_manager.get_game_inputs(), last_tick_t.unwrap(), dt);
+        scene.update(input_manager.collect_game_inputs(), last_tick_t.unwrap(), dt);
         scene.render(&mut canvas);
 
         canvas.present();
