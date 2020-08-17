@@ -1,52 +1,61 @@
 use crate::ui::*;
 use crate::{asset_cache::Assets, input::GameInput, scene::Scene, sprite::Sprite};
-use crate::{constants::*, tiles::Tilemap};
+use crate::{block, constants::*, tiles::Tilemap, fullscreen};
 use sdl2::{pixels::Color, render::Canvas, video::Window};
 use stretch::{
     geometry::{Rect, Size},
     style::{AlignItems, Dimension, FlexDirection, JustifyContent, Overflow, Style},
 };
 
+
+pub struct UIProps {
+    count: i32,
+}
+
+struct GameSceneUI {
+    graph: UIGraph
+}
+
+impl GameSceneUI {
+    pub fn new() -> Self {
+        Self {
+            graph: UIGraph::new(Self::render(UIProps {
+                count: 1
+            }))
+        }
+    }
+}
+
+impl UIComponent<UIProps> for GameSceneUI {
+    fn render(props: UIProps) -> ViewBuilder {
+        fullscreen!()
+            .bg_color(Color::RGB(40, 40, 40))
+            .flex_direction(FlexDirection::Column)
+            .padding_pt_all(10.0)
+            .children(&mut vec![
+                block!(80, 80, 80)
+                    .children(&mut vec![block!(120, 120, 120), block!(120, 120, 120)]),
+                block!(80, 80, 80),
+            ])
+            .clone()
+    }
+
+    fn set_ui_graph(&mut self, graph: UIGraph) {
+        self.graph = graph;
+    }
+}
+
 pub struct GameScene<'a> {
     assets: &'a Assets<'a>,
     player: Sprite<'a>,
     tilemap: Tilemap<'a>,
-    ui: UIGraph,
+    ui: GameSceneUI,
     player_direction: f64,
     target_direction: f64,
     switched_t: u128,
 }
 
 impl<'a> GameScene<'a> {
-    fn build_ui() -> UIGraph {
-        fn block(brightness: u8) -> ViewBuilder {
-            view()
-                .flex_grow(1.0)
-                .bg_color(Color::RGB(brightness, brightness, brightness))
-                .margin_pt_all(5.0)
-                .clone()
-        }
-
-        UIGraph::new(
-            view()
-                .width_px(SCREEN_WIDTH as f32)
-                .height_px(SCREEN_HEIGHT as f32)
-                .bg_color(Color::RGB(40, 40, 40))
-                .flex_direction(FlexDirection::Column)
-                .padding_pt_all(10.0)
-                .children(&mut vec![
-                    &mut block(80).children(&mut vec![
-                        &mut block(120)
-                            .flex_direction(FlexDirection::Column)
-                            .children(&mut vec![&mut block(160), &mut block(160)]),
-                        &mut block(120),
-                        &mut block(120),
-                    ]),
-                    &mut block(80),
-                ]),
-        )
-    }
-
     pub fn new(assets: &'a Assets) -> Self {
         Self {
             assets,
@@ -55,7 +64,7 @@ impl<'a> GameScene<'a> {
             target_direction: 1.0,
             switched_t: 0,
             tilemap: Tilemap::new(0.0, 0.0, &assets.test_level, &assets.tilemap),
-            ui: GameScene::build_ui(),
+            ui: GameSceneUI::new(),
         }
     }
 
@@ -93,6 +102,6 @@ impl<'a> Scene for GameScene<'a> {
     fn render(&mut self, canvas: &mut Canvas<Window>) {
         // self.tilemap.draw(canvas);
         // self.player.draw(canvas);
-        self.ui.draw(canvas);
+        self.ui.graph.draw(canvas);
     }
 }

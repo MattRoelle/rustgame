@@ -6,16 +6,25 @@ use stretch::{
     style::{Dimension, Style, FlexDirection, AlignItems, AlignContent, JustifyContent},
 };
 
+pub trait UIComponent<TProps> {
+    fn render(props: TProps) -> ViewBuilder;
+    fn set_ui_graph(&mut self, graph: UIGraph);
+    fn set_props<T: UIComponent<TProps>>(&mut self, props: TProps) {
+        self.set_ui_graph(UIGraph::new(T::render(props).clone()))
+    }
+}
+
 pub struct UIGraph {
     stretch: stretch::node::Stretch,
     root: UINode,
 }
 
 impl UIGraph {
-    pub fn new(root: &mut ViewBuilder) -> Self {
+    pub fn new(root: ViewBuilder) -> Self {
         let mut ret = Self {
             stretch: stretch::node::Stretch::new(),
             root: root.build(),
+            // root
         };
 
         ret.compute_stretch_node();
@@ -269,5 +278,25 @@ pub fn view() -> ViewBuilder {
         child_nodes: vec![],
         style: ViewStyle::default(),
         // name: String::from(name)
+    }
+}
+
+/* Components */
+#[macro_export]
+macro_rules! fullscreen {
+    () => {
+        view()
+            .width_px(SCREEN_WIDTH as f32)
+            .height_px(SCREEN_HEIGHT as f32)
+    }
+}
+
+#[macro_export]
+macro_rules! block {
+    ($r:expr,$g:expr,$b:expr) => {
+        view()
+            .flex_grow(1.0)
+            .bg_color(Color::RGB($r, $g, $b))
+            .margin_pt_all(5.0)
     }
 }

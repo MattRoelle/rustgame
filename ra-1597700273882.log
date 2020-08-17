@@ -1,0 +1,28 @@
+error: expected one of `)`, `,`, `.`, `?`, or an operator, found `fullscreen`
+  --> <stdin>:25:17
+   |
+24 |             view()
+   |                   - expected one of `)`, `,`, `.`, `?`, or an operator
+25 |                 fullscreen!
+   |                 ^^^^^^^^^^ unexpected token
+
+error: expected one of `.`, `;`, `?`, `}`, or an operator, found `,`
+  --> <stdin>:40:19
+   |
+40 |                 ]),
+   |                   ^ expected one of `.`, `;`, `?`, `}`, or an operator
+
+error: expected one of `)`, `,`, `.`, `?`, or an operator, found `fullscreen`
+  --> <stdin>:25:17
+   |
+24 |             view()
+   |                   - expected one of `)`, `,`, `.`, `?`, or an operator
+25 |                 fullscreen!
+   |                 ^^^^^^^^^^ unexpected token
+
+error: expected one of `.`, `;`, `?`, `}`, or an operator, found `,`
+  --> <stdin>:39:19
+   |
+39 |                 ]),
+   |                   ^ expected one of `.`, `;`, `?`, `}`, or an operator
+
