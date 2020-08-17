@@ -48,7 +48,6 @@ impl<'a> Tilemap<'a> {
             texture_src_rects
         };
 
-
         Self {
             pos: Vec2::new(x, y),
             map,

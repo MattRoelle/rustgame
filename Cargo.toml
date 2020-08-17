@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 tiled = "0.9.2"
 bytebuffer = "0.2.0"
+stretch = "0.3.2"
 
 [dependencies.sdl2]
 version = "0.34"

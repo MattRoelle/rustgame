@@ -8,6 +8,7 @@ mod sprite;
 mod input;
 mod constants;
 mod tiles;
+mod ui;
 
 extern crate sdl2;
 
@@ -73,6 +74,7 @@ pub fn main() {
             }
         }
 
+        canvas.set_draw_color((0, 0, 0));
         canvas.clear();
 
         for event in event_pump.poll_iter() {
