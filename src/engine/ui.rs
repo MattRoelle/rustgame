@@ -29,8 +29,8 @@ impl UIGraph {
             // root
         };
 
-        ret.compute_stretch_node();
-        ret.compute_layout();
+        ret.compute_stretch_node().unwrap();
+        ret.compute_layout().unwrap();
 
         return ret;
     }
@@ -133,8 +133,6 @@ impl UINode {
         let layout = stretch
             .layout(self.node.expect("Must call compute_layout() first"))
             .expect("Erorr calling stretch.layout");
-
-        // dbg!(&self.name, &layout);
 
         let cumulative_pos: Point<f32>;
         match pos {

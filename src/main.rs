@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 
-mod constants;
 mod game;
 mod engine;
 
@@ -38,14 +37,6 @@ pub fn main() {
 
     let texture_creator = canvas.texture_creator();
     let assets = assets::init(&texture_creator).expect("Failed to load assets");
-
-    dbg!(&assets.test_level.layers[0].tiles[0][0]);
-    dbg!(&assets.test_level.layers[0].tiles[0][1]);
-    dbg!(&assets.test_level.layers[0].tiles[0][2]);
-    dbg!(&assets.test_level.layers[0].tiles[0][3]);
-    dbg!(&assets.test_level.layers[0].tiles[0][4]);
-    dbg!(&assets.test_level.layers[0].tiles[0][5]);
-    dbg!(&assets.test_level.tilesets);
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut scene = GameScene::new(&assets);

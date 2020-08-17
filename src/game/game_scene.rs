@@ -1,14 +1,9 @@
 use crate::ui::*;
-use crate::engine::*;
 use crate::{input::GameInput, scene::Scene, sprite::Sprite};
 use crate::{block, constants::*, tiles::Tilemap, fullscreen};
 use sdl2::{pixels::Color, render::Canvas, video::Window};
-use stretch::{
-    geometry::{Rect, Size},
-    style::{AlignItems, Dimension, FlexDirection, JustifyContent, Overflow, Style},
-};
+use stretch::style::*;
 use super::assets::Assets;
-
 
 #[derive(Debug, Copy, Clone)]
 pub struct UIProps {
@@ -60,7 +55,7 @@ impl UIComponent for GameSceneUI {
 
         let mut bottom_children = {
             let mut ret = Vec::new();
-            for i in 0..(7 - props.count) {
+            for _i in 0..(7 - props.count) {
                 let block = block!(120, 120, 120).clone();
                 ret.push(block)
             }
