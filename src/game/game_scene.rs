@@ -1,11 +1,13 @@
 use crate::ui::*;
-use crate::{asset_cache::Assets, input::GameInput, scene::Scene, sprite::Sprite};
+use crate::engine::*;
+use crate::{input::GameInput, scene::Scene, sprite::Sprite};
 use crate::{block, constants::*, tiles::Tilemap, fullscreen};
 use sdl2::{pixels::Color, render::Canvas, video::Window};
 use stretch::{
     geometry::{Rect, Size},
     style::{AlignItems, Dimension, FlexDirection, JustifyContent, Overflow, Style},
 };
+use super::assets::Assets;
 
 
 #[derive(Debug, Copy, Clone)]
@@ -66,7 +68,7 @@ impl UIComponent for GameSceneUI {
         };
 
         fullscreen!()
-            .bg_color(Color::RGB(240, 40, 40))
+            .bg_color(Color::RGB(40, 40, 240))
             .flex_direction(FlexDirection::Column)
             .padding_pt_all(10.0)
             .children(&mut vec![

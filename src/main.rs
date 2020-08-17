@@ -1,22 +1,18 @@
 #![allow(dead_code)]
 
-mod scene;
-mod game_scene;
-mod geometry;
-mod asset_cache;
-mod sprite;
-mod input;
 mod constants;
-mod tiles;
-mod ui;
+mod game;
+mod engine;
 
 extern crate sdl2;
 
 use sdl2::{event::Event, image::{InitFlag}, keyboard::Keycode};
 use constants::*;
-use input::InputManager;
-use game_scene::GameScene;
 use std::time::{SystemTime};
+use engine::*;
+use game::*;
+use game_scene::GameScene;
+use input::InputManager;
 use scene::Scene;
 
 pub fn main() {
@@ -41,7 +37,7 @@ pub fn main() {
         .expect("Error setting canvas logical size");
 
     let texture_creator = canvas.texture_creator();
-    let assets = asset_cache::init(&texture_creator).expect("Failed to load assets");
+    let assets = assets::init(&texture_creator).expect("Failed to load assets");
 
     dbg!(&assets.test_level.layers[0].tiles[0][0]);
     dbg!(&assets.test_level.layers[0].tiles[0][1]);

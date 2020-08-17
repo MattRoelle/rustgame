@@ -25,7 +25,7 @@ pub fn init<'a>(texture_creator: &'a TextureCreator<WindowContext>) -> Result<As
         green_rect: texture_creator.load_texture("./resources/green_rect.png")?,
         tilemap: texture_creator.load_texture("./resources/tilemap.png")?,
         test_level: tiled::parse(BufReader::new(ByteBuffer::from_bytes(include_bytes!(
-            "../resources/test_level.tmx"
+            "../../resources/test_level.tmx"
         )))).expect("Failed to load map"),
     })
 }
