@@ -278,7 +278,7 @@ impl Into<UINodeBuilder> for ViewBuilder {
 }
 
 impl ViewBuilder {
-    pub fn style(&mut self, attr: StyleAttr) -> &mut ViewBuilder {
+    pub fn style(&mut self, attr: StyleAttr) -> ViewBuilder {
         match attr {
             StyleAttr::FlexDirection(x) => { self.layout_style.flex_direction = x }
             StyleAttr::AlignItems(x) => { self.layout_style.align_items = x }
@@ -367,40 +367,40 @@ impl ViewBuilder {
             }
             StyleAttr::PositionType(x) => { self.layout_style.position_type = x }
         }
-        self
+        self.clone()
     }
 
-    pub fn style_if(&mut self, attr: StyleAttr, condition: bool) -> &mut ViewBuilder {
+    pub fn style_if(&mut self, attr: StyleAttr, condition: bool) -> ViewBuilder {
         if condition {
             self.style(attr);
         }
-        self
+        self.clone()
     }
 
-    pub fn class(&mut self, attrs: &[StyleAttr]) -> &mut ViewBuilder {
+    pub fn class(&mut self, attrs: &[StyleAttr]) -> ViewBuilder {
         for s in attrs.iter() {
             self.style(*s);
         }
-        self
+        self.clone()
     }
 
-    pub fn class_if(&mut self, class: &[StyleAttr], condition: bool) -> &mut ViewBuilder {
+    pub fn class_if(&mut self, class: &[StyleAttr], condition: bool) -> ViewBuilder {
         if condition {
             self.class(class);
         }
-        self
+        self.clone()
     }
 
-    pub fn child(&mut self, node: &mut ViewBuilder) -> &mut ViewBuilder {
+    pub fn child(&mut self, node: ViewBuilder) -> ViewBuilder {
         self.child_nodes.push(node.clone());
-        self
+        self.clone()
     }
 
-    pub fn children(&mut self, children: &mut Vec<&mut ViewBuilder>) -> &mut ViewBuilder {
+    pub fn children(&mut self, children: &mut Vec<ViewBuilder>) -> ViewBuilder {
         for child in children.iter_mut() {
             self.child_nodes.push(child.clone());
         }
-        self
+        self.clone()
     }
 
     fn build(&self) -> UINode {

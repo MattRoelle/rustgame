@@ -7,7 +7,6 @@ use sdl2::{render::Canvas, video::Window};
 
 #[derive(Debug, Copy, Clone)]
 pub struct UIProps {
-    color: u8,
     count: u32,
 }
 
@@ -30,36 +29,34 @@ impl<'a> GameScene<'a> {
         Self {
             assets,
             ui: UIComponent::new(
-                UIProps { color: 0, count: 0 },
+                UIProps { count: 0 },
                 |props, action| {
                     match action {
                         UIActions::Increment => {
-                            props.color += 1;
-                            props.color %= 240;
                             props.count += 1;
-                            props.count %= 20;
+                            props.count %= 240;
                         }
                     }
                 },
                 |props| {
+                    let color = props.count as u8;
                 view()
                     .class(FULLSCREEN)
-                    .style(BgColorRGB(props.color, props.color, props.color))
+                    .style(BgColorRGB(color, color, color))
                     .style(PaddingPx(20.0, 20.0, 20.0, 20.0))
                     .child(
                         view()
                             .style(FlexGrow(1.0))
-                            .style(BgColorRGB(200, 100, 100))
-                            // .children(
-                            //     &mut ((0..props.count).map(|i| {
-                            //         view()
-                            //             .style(FlexGrow(1.0))
-                            //             .style(BgColorRGB(100, 200, 100))
-                            //             .clone()
-                            //     })
-                            // )
+                            .style(BgColorRGB(180, 100, 100))
+                            .children(
+                                &mut ((0..(props.count/3)).map(|i| {
+                                    view()
+                                        .style(FlexGrow(1.0))
+                                        .style(MarginPx(5.0, 5.0, 5.0, 5.0))
+                                        .style(BgColorRGB(240, 100, 100))
+                                }).collect())
+                            )
                     )
-                    .clone()
             }),
         }
     }
