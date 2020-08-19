@@ -119,15 +119,6 @@ impl<'a> FontAtlas<'a> {
             self.draw_char(canvas, c, x + cursor_x, y + cursor_y, size);
             cursor_x += glyph_width;
         }
-
-        // for c in s.chars() {
-        //     let glyph_rect = self.draw_char(canvas, c, x + cursor_x, y + cursor_y, size);
-        //     cursor_x += glyph_rect.width() as i32;
-        //     if cursor_x > width as i32 {
-        //         cursor_x = 0;
-        //         cursor_y += (glyph_rect.height() as f32 * line_height) as i32;
-        //     }
-        // }
     }
 
     pub fn char_src_rect(&mut self, c: char) -> Rect {

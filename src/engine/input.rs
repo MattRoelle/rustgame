@@ -4,6 +4,8 @@ use std::collections::HashMap;
 pub enum GameInput {
     Move(f64, f64),
     Jump,
+    Up,
+    Down,
     None,
 }
 
@@ -30,7 +32,13 @@ impl InputManager {
         match keycode {
             Keycode::Space => {
                 self.inputs.push(GameInput::Jump)
-            },
+            }
+            Keycode::Up | Keycode::W => {
+                self.inputs.push(GameInput::Up)
+            }
+            Keycode::Down | Keycode::S => {
+                self.inputs.push(GameInput::Down)
+            }
             _ => {}
         }
     }

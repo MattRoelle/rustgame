@@ -201,7 +201,7 @@ impl UINode {
                     None => {}
                 }
 
-                let content_box = sdl2::rect::Rect::new(
+                let border_box = sdl2::rect::Rect::new(
                     (cumulative_pos.x + border_width as f32) as i32,
                     (cumulative_pos.y + border_width as f32) as i32,
                     layout.size.width as u32 - (border_width * 2) as u32,
@@ -211,7 +211,7 @@ impl UINode {
                 match v.background_color {
                     Some(c) => {
                         canvas.set_draw_color(c);
-                        canvas.fill_rect(content_box).unwrap();
+                        canvas.fill_rect(border_box).unwrap();
                     }
                     None => {}
                 }
@@ -220,10 +220,10 @@ impl UINode {
                     Some(s) => font_atlas.draw_str(
                         canvas,
                         s.clone(),
-                        content_box.x(),
-                        content_box.y(),
-                        content_box.width(),
-                        content_box.height(),
+                        border_box.x(),
+                        border_box.y(),
+                        border_box.width(),
+                        border_box.height(),
                         v.font_size.unwrap_or(1.0),
                         v.line_height.unwrap_or(1.0),
                     ),

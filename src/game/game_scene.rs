@@ -7,11 +7,11 @@ use sdl2::{render::Canvas, video::Window};
 
 #[derive(Debug, Copy, Clone)]
 pub struct UIProps {
-    count: u32,
+    selected_idx: i8,
 }
 
 enum UIActions {
-    Increment,
+    MoveCursor(i8),
 }
 
 define_class!(
@@ -29,36 +29,63 @@ impl<'a> GameScene<'a> {
         Self {
             assets,
             ui: UIComponent::new(
-                UIProps { count: 0 },
+                UIProps { selected_idx: 0 },
                 |props, action| match action {
-                    UIActions::Increment => {
-                        props.count += 1;
-                        props.count %= 240;
+                    UIActions::MoveCursor(direction) => {
+                        props.selected_idx = (props.selected_idx + direction).max(0).min(3);
                     }
                 },
                 |props| {
-                    let color = props.count as u8;
+                    let menu_options = vec![
+                        "Attack",
+                        "Defend",
+                        "Inventory",
+                        "Flee",
+                    ];
+
+                    fn menuitem(text: &str, selected: bool) -> ViewBuilder {
+                        view()
+                            .attr(MarginPx(10.0, 10.0, 10.0, 10.0))
+                            .attr_if(BgColorRGB(180, 180, 180), selected)
+                            .attr_if(BgColorRGB(120, 120, 120), !selected)
+                            .attr(PaddingPx(20.0, 20.0, 20.0, 20.0))
+                            .child(
+                                view()
+                                    .attr(FlexGrow(1.0))
+                                    .attr(FontSize(0.5))
+                                    .attr(HeightPx(64.0))
+                                    .text(text),
+                            )
+                    }
+
                     view()
                         .class(FULLSCREEN)
-                        .attr(BgColorRGB(color, color, color))
+                        .attr(BgColorRGB(0, 0, 0))
                         .attr(PaddingPx(20.0, 20.0, 20.0, 20.0))
-                        .child(
-                            view()
-                                .attr(FlexGrow(1.0))
-                                .attr(BgColorRGB(180, 100, 100))
+                        .children(&mut vec![
+                            view() // Left column
+                                .attr(FlexGrow(0.4))
+                                .attr(FlexDirection(stretch::style::FlexDirection::Column))
+                                .attr(BgColorRGB(100, 100, 100))
+                                .attr(MarginPx(10.0, 10.0, 10.0, 10.0))
                                 .children(
-                                    &mut ((0..(props.count))
+                                    &mut ((0..(menu_options.len()))
                                         .map(|i| {
-                                            view()
-                                                .attr(FlexGrow(1.0))
-                                                .attr(MarginPx(5.0, 5.0, 5.0, 5.0))
-                                                .attr(BgColorRGB(240, 100, 100))
-                                                .attr(FontSize(0.5))
-                                                .text("This is a test. lorum ipsum dolor")
+                                            menuitem(menu_options[i], props.selected_idx == i as i8)
                                         })
                                         .collect()),
                                 ),
-                        )
+                            view() // Center view
+                                .attr(FlexGrow(1.0))
+                                .attr(FlexDirection(stretch::style::FlexDirection::Column))
+                                .attr(BgColorRGB(100, 100, 100))
+                                .attr(MarginPx(10.0, 10.0, 10.0, 10.0)),
+                            view() // Right Column
+                                .attr(FlexGrow(0.4))
+                                .attr(MarginPx(10.0, 10.0, 10.0, 10.0))
+                                .attr(FlexDirection(stretch::style::FlexDirection::Column))
+                                .attr(BgColorRGB(100, 100, 100))
+                        ])
                 },
             ),
         }
@@ -67,15 +94,13 @@ impl<'a> GameScene<'a> {
 
 impl<'a> Scene for GameScene<'a> {
     fn update(&mut self, inputs: Vec<GameInput>, t: u128, dt: f64) {
-        self.ui.dispatch(UIActions::Increment);
-        // for input in inputs {
-        //     match input {
-        //         GameInput::Jump => {
-        //             self.ui.dispatch(UIActions::Increment)
-        //         }
-        //         _ => {}
-        //     }
-        // }
+        for input in inputs {
+            match input {
+                GameInput::Up => self.ui.dispatch(UIActions::MoveCursor(-1)),
+                GameInput::Down => self.ui.dispatch(UIActions::MoveCursor(1)),
+                _ => {}
+            }
+        }
     }
 
     fn render(&mut self, canvas: &mut Canvas<Window>) {
