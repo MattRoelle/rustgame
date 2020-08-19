@@ -62,6 +62,7 @@ name = "game"
 version = "0.1.0"
 dependencies = [
  "bytebuffer",
+ "lazy_static",
  "sdl2",
  "stretch",
  "tiled",

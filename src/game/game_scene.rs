@@ -1,6 +1,6 @@
 use super::assets::Assets;
 use crate::constants::*;
-use crate::ui::StyleAttr::*;
+use crate::ui::ViewAttr::*;
 use crate::ui::*;
 use crate::{define_class, input::GameInput, scene::Scene};
 use sdl2::{render::Canvas, video::Window};
@@ -20,12 +20,12 @@ define_class!(
 );
 
 pub struct GameScene<'a> {
-    assets: &'a Assets<'a>,
+    assets: Assets<'a>,
     ui: UIComponent<UIProps, UIActions>,
 }
 
 impl<'a> GameScene<'a> {
-    pub fn new(assets: &'a Assets) -> Self {
+    pub fn new(assets: Assets<'a>) -> Self {
         Self {
             assets,
             ui: UIComponent::new(
@@ -40,19 +40,21 @@ impl<'a> GameScene<'a> {
                     let color = props.count as u8;
                     view()
                         .class(FULLSCREEN)
-                        .style(BgColorRGB(color, color, color))
-                        .style(PaddingPx(20.0, 20.0, 20.0, 20.0))
+                        .attr(BgColorRGB(color, color, color))
+                        .attr(PaddingPx(20.0, 20.0, 20.0, 20.0))
                         .child(
                             view()
-                                .style(FlexGrow(1.0))
-                                .style(BgColorRGB(180, 100, 100))
+                                .attr(FlexGrow(1.0))
+                                .attr(BgColorRGB(180, 100, 100))
                                 .children(
-                                    &mut ((0..(props.count / 3))
+                                    &mut ((0..(props.count))
                                         .map(|i| {
                                             view()
-                                                .style(FlexGrow(1.0))
-                                                .style(MarginPx(5.0, 5.0, 5.0, 5.0))
-                                                .style(BgColorRGB(240, 100, 100))
+                                                .attr(FlexGrow(1.0))
+                                                .attr(MarginPx(5.0, 5.0, 5.0, 5.0))
+                                                .attr(BgColorRGB(240, 100, 100))
+                                                .attr(FontSize(0.5))
+                                                .text("This is a test. lorum ipsum dolor")
                                         })
                                         .collect()),
                                 ),
@@ -77,6 +79,6 @@ impl<'a> Scene for GameScene<'a> {
     }
 
     fn render(&mut self, canvas: &mut Canvas<Window>) {
-        // self.ui.draw(canvas);
+        self.ui.draw(canvas, &mut self.assets.font);
     }
 }

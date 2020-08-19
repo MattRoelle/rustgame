@@ -5,7 +5,7 @@ use sdl2::{
     video::{Window, WindowContext}, ttf::{Font, Sdl2TtfContext},
 };
 use std::io::BufReader;
-use crate::engine::text::TextAtlas;
+use crate::engine::text::FontAtlas;
 
 extern crate sdl2;
 
@@ -16,7 +16,7 @@ pub struct Assets<'a> {
     pub green_rect: Texture<'a>,
     pub tilemap: Texture<'a>,
     pub test_level: tiled::Map,
-    pub font: TextAtlas<'a>
+    pub font: FontAtlas<'a>
 }
 
 pub fn init<'a>(
@@ -33,7 +33,7 @@ pub fn init<'a>(
         test_level: tiled::parse(BufReader::new(ByteBuffer::from_bytes(include_bytes!(
             "../../resources/test_level.tmx"
         )))).expect("Failed to load map"),
-        font: TextAtlas::new(
+        font: FontAtlas::new(
             canvas,
             texture_creator,
             ttf_context,

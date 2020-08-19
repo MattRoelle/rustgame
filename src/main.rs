@@ -13,6 +13,11 @@ use game::*;
 use input::InputManager;
 use scene::Scene;
 use game_scene::GameScene;
+use assets::Assets;
+
+#[macro_use]
+extern crate lazy_static;
+
 
 pub fn main() {
     let sdl_context = sdl2::init().unwrap();
@@ -40,7 +45,7 @@ pub fn main() {
     let mut assets = assets::init(&mut canvas, &texture_creator, &ttf_context).expect("Failed to load assets");
 
     let mut event_pump = sdl_context.event_pump().unwrap();
-    let mut scene = GameScene::new(&assets);
+    let mut scene = GameScene::new(assets);
     let mut input_manager = InputManager::new();
 
     let now = SystemTime::now();
@@ -64,7 +69,7 @@ pub fn main() {
 
         canvas.set_draw_color((0, 0, 0));
         canvas.clear();
-        assets.font.draw_str(&mut canvas, "This is a test. Lorum ipsum dolor set amut.", 100, 100, 300, 300, 0.5, 1.0);
+        // assets.font.draw_str(&mut canvas, "This is a test. Lorum ipsum dolor set amut.", 100, 100, 300, 300, 0.5, 1.0);
 
         for event in event_pump.poll_iter() {
             match event {
@@ -82,8 +87,8 @@ pub fn main() {
             }
         }
 
-        // scene.update(input_manager.collect_game_inputs(), last_tick_t.unwrap(), dt);
-        // scene.render(&mut canvas);
+        scene.update(input_manager.collect_game_inputs(), last_tick_t.unwrap(), dt);
+        scene.render(&mut canvas);
 
         canvas.present();
     }

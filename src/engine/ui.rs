@@ -1,23 +1,34 @@
+use super::text::FontAtlas;
 use sdl2::{pixels::Color, render::Canvas, video::Window};
 use stretch::{
     geometry::{Point, Rect, Size},
     node::Node,
     result::Layout,
-    style::{AlignContent, AlignItems, Dimension, FlexDirection, JustifyContent, Style, Overflow, PositionType, AlignSelf},
+    style::{
+        AlignContent, AlignItems, AlignSelf, Dimension, FlexDirection, JustifyContent, Overflow,
+        PositionType, Style,
+    },
 };
 
-pub struct UIComponent<Props, Actions>  where Props: Copy {
+pub struct UIComponent<Props, Actions>
+where
+    Props: Copy,
+{
     props: Props,
     render: fn(props: Props) -> ViewBuilder,
     on_action: fn(props: &mut Props, action: Actions),
     graph: UIGraph,
 }
 
-impl<Props, Actions> UIComponent<Props, Actions> where Props: Copy {
+impl<Props, Actions> UIComponent<Props, Actions>
+where
+    Props: Copy,
+{
     pub fn new(
         initial_props: Props,
         on_action: fn(props: &mut Props, action: Actions),
-        render: fn(props: Props) -> ViewBuilder) -> Self {
+        render: fn(props: Props) -> ViewBuilder,
+    ) -> Self {
         Self {
             props: initial_props,
             render,
@@ -31,8 +42,8 @@ impl<Props, Actions> UIComponent<Props, Actions> where Props: Copy {
         self.graph = UIGraph::new((self.render)(self.props).clone());
     }
 
-    pub fn draw(&mut self, canvas: &mut Canvas<Window>) {
-        self.graph.draw(canvas);
+    pub fn draw<'a>(&mut self, canvas: &mut Canvas<Window>, font_atlas: &mut FontAtlas<'a>) {
+        self.graph.draw(canvas, font_atlas);
     }
 }
 
@@ -70,16 +81,19 @@ impl UIGraph {
         self.root.compute_layout(&mut self.stretch)
     }
 
-    pub fn draw(&mut self, canvas: &mut Canvas<Window>) {
-        self.root.draw(&mut self.stretch, canvas, None);
+    pub fn draw<'a>(&mut self, canvas: &mut Canvas<Window>, font_atlas: &mut FontAtlas<'a>) {
+        self.root.draw(&mut self.stretch, canvas, None, font_atlas);
     }
 }
 
-#[derive(Default, Copy, Clone)]
+#[derive(Default, Clone)]
 pub struct ViewStyle {
     pub background_color: Option<Color>,
     pub border_color: Option<Color>,
     pub border_width: Option<i32>,
+    pub text: Option<String>,
+    pub font_size: Option<f32>,
+    pub line_height: Option<f32>,
 }
 
 pub enum UINodeType {
@@ -144,11 +158,12 @@ impl UINode {
         Ok(())
     }
 
-    pub fn draw(
+    pub fn draw<'a>(
         &mut self,
         stretch: &mut stretch::node::Stretch,
         canvas: &mut Canvas<Window>,
         pos: Option<Point<f32>>,
+        font_atlas: &mut FontAtlas<'a>,
     ) {
         let layout = stretch
             .layout(self.node.expect("Must call compute_layout() first"))
@@ -167,7 +182,7 @@ impl UINode {
             }
         }
 
-        match self.node_type {
+        match &self.node_type {
             UINodeType::View(v) => {
                 let border_width = v.border_width.unwrap_or(0);
 
@@ -186,25 +201,39 @@ impl UINode {
                     None => {}
                 }
 
+                let content_box = sdl2::rect::Rect::new(
+                    (cumulative_pos.x + border_width as f32) as i32,
+                    (cumulative_pos.y + border_width as f32) as i32,
+                    layout.size.width as u32 - (border_width * 2) as u32,
+                    layout.size.height as u32 - (border_width * 2) as u32,
+                );
+
                 match v.background_color {
                     Some(c) => {
                         canvas.set_draw_color(c);
-                        canvas
-                            .fill_rect(sdl2::rect::Rect::new(
-                                (cumulative_pos.x + border_width as f32) as i32,
-                                (cumulative_pos.y + border_width as f32) as i32,
-                                layout.size.width as u32 - (border_width * 2) as u32,
-                                layout.size.height as u32 - (border_width * 2) as u32,
-                            ))
-                            .unwrap();
-                    },
+                        canvas.fill_rect(content_box).unwrap();
+                    }
+                    None => {}
+                }
+
+                match &v.text {
+                    Some(s) => font_atlas.draw_str(
+                        canvas,
+                        s.clone(),
+                        content_box.x(),
+                        content_box.y(),
+                        content_box.width(),
+                        content_box.height(),
+                        v.font_size.unwrap_or(1.0),
+                        v.line_height.unwrap_or(1.0),
+                    ),
                     None => {}
                 }
             }
         };
 
         for child in self.children.iter_mut() {
-            child.draw(stretch, canvas, Some(cumulative_pos));
+            child.draw(stretch, canvas, Some(cumulative_pos), font_atlas);
         }
     }
 }
@@ -221,8 +250,8 @@ impl UINodeBuilder {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
-pub enum StyleAttr {
+#[derive(Debug, Clone)]
+pub enum ViewAttr {
     FlexDirection(FlexDirection),
     AlignItems(AlignItems),
     AlignContent(AlignContent),
@@ -260,7 +289,10 @@ pub enum StyleAttr {
     PositionPx(f32, f32, f32, f32),
     PositionPct(f32, f32, f32, f32),
     Position(Dimension, Dimension, Dimension, Dimension),
-    PositionType(PositionType)
+    PositionType(PositionType),
+    Text(String),
+    FontSize(f32),
+    LineHeight(f32),
 }
 
 #[derive(Clone)]
@@ -268,7 +300,7 @@ pub struct ViewBuilder {
     layout_style: Style,
     child_nodes: Vec<ViewBuilder>,
     style: ViewStyle,
-    // name: String
+    text: Option<String>, // name: String
 }
 
 impl Into<UINodeBuilder> for ViewBuilder {
@@ -278,36 +310,42 @@ impl Into<UINodeBuilder> for ViewBuilder {
 }
 
 impl ViewBuilder {
-    pub fn style(&mut self, attr: StyleAttr) -> ViewBuilder {
+    pub fn attr(&mut self, attr: ViewAttr) -> ViewBuilder {
         match attr {
-            StyleAttr::FlexDirection(x) => { self.layout_style.flex_direction = x }
-            StyleAttr::AlignItems(x) => { self.layout_style.align_items = x }
-            StyleAttr::AlignContent(x) => { self.layout_style.align_content = x }
-            StyleAttr::AlignSelf(x) => { self.layout_style.align_self = x }
-            StyleAttr::JustifyContent(x) => { self.layout_style.justify_content = x }
-            StyleAttr::BgColorRGB(r, g, b) => { self.style.background_color = Some(Color::RGB(r, g, b)) }
-            StyleAttr::BgColorRGBA(r, g, b, a) => { self.style.background_color = Some(Color::RGBA(r, g, b, a))}
-            StyleAttr::FlexBasis(x) => { self.layout_style.flex_basis = x }
-            StyleAttr::FlexGrow(x) => { self.layout_style.flex_grow = x; }
-            StyleAttr::Width(x) => { self.layout_style.size.width = x}
-            StyleAttr::Height(x) => { self.layout_style.size.height = x}
-            StyleAttr::WidthPx(x) => { self.layout_style.size.width = Dimension::Points(x) }
-            StyleAttr::HeightPx(x) => { self.layout_style.size.height = Dimension::Points(x) }
-            StyleAttr::WidthPct(x) => { self.layout_style.size.width = Dimension::Percent(x)}
-            StyleAttr::HeightPct(x) => { self.layout_style.size.height = Dimension::Percent(x)}
-            StyleAttr::MinWidth(x) => { self.layout_style.min_size.width = x}
-            StyleAttr::MinHeight(x) => { self.layout_style.min_size.height = x}
-            StyleAttr::MinWidthPx(x) => { self.layout_style.min_size.width = Dimension::Points(x) }
-            StyleAttr::MinHeightPx(x) => { self.layout_style.min_size.height = Dimension::Points(x) }
-            StyleAttr::MinWidthPct(x) => { self.layout_style.min_size.width = Dimension::Percent(x)}
-            StyleAttr::MinHeightPct(x) => { self.layout_style.min_size.height = Dimension::Percent(x)}
-            StyleAttr::MaxWidth(x) => { self.layout_style.max_size.width = x}
-            StyleAttr::MaxHeight(x) => { self.layout_style.max_size.height = x}
-            StyleAttr::MaxWidthPx(x) => { self.layout_style.max_size.width = Dimension::Points(x) }
-            StyleAttr::MaxHeightPx(x) => { self.layout_style.max_size.height = Dimension::Points(x) }
-            StyleAttr::MaxWidthPct(x) => { self.layout_style.max_size.width = Dimension::Percent(x)}
-            StyleAttr::MaxHeightPct(x) => { self.layout_style.max_size.height = Dimension::Percent(x)}
-            StyleAttr::MarginPx(start, top, end, bottom) => { 
+            ViewAttr::FlexDirection(x) => self.layout_style.flex_direction = x,
+            ViewAttr::AlignItems(x) => self.layout_style.align_items = x,
+            ViewAttr::AlignContent(x) => self.layout_style.align_content = x,
+            ViewAttr::AlignSelf(x) => self.layout_style.align_self = x,
+            ViewAttr::JustifyContent(x) => self.layout_style.justify_content = x,
+            ViewAttr::BgColorRGB(r, g, b) => {
+                self.style.background_color = Some(Color::RGB(r, g, b))
+            }
+            ViewAttr::BgColorRGBA(r, g, b, a) => {
+                self.style.background_color = Some(Color::RGBA(r, g, b, a))
+            }
+            ViewAttr::FlexBasis(x) => self.layout_style.flex_basis = x,
+            ViewAttr::FlexGrow(x) => {
+                self.layout_style.flex_grow = x;
+            }
+            ViewAttr::Width(x) => self.layout_style.size.width = x,
+            ViewAttr::Height(x) => self.layout_style.size.height = x,
+            ViewAttr::WidthPx(x) => self.layout_style.size.width = Dimension::Points(x),
+            ViewAttr::HeightPx(x) => self.layout_style.size.height = Dimension::Points(x),
+            ViewAttr::WidthPct(x) => self.layout_style.size.width = Dimension::Percent(x),
+            ViewAttr::HeightPct(x) => self.layout_style.size.height = Dimension::Percent(x),
+            ViewAttr::MinWidth(x) => self.layout_style.min_size.width = x,
+            ViewAttr::MinHeight(x) => self.layout_style.min_size.height = x,
+            ViewAttr::MinWidthPx(x) => self.layout_style.min_size.width = Dimension::Points(x),
+            ViewAttr::MinHeightPx(x) => self.layout_style.min_size.height = Dimension::Points(x),
+            ViewAttr::MinWidthPct(x) => self.layout_style.min_size.width = Dimension::Percent(x),
+            ViewAttr::MinHeightPct(x) => self.layout_style.min_size.height = Dimension::Percent(x),
+            ViewAttr::MaxWidth(x) => self.layout_style.max_size.width = x,
+            ViewAttr::MaxHeight(x) => self.layout_style.max_size.height = x,
+            ViewAttr::MaxWidthPx(x) => self.layout_style.max_size.width = Dimension::Points(x),
+            ViewAttr::MaxHeightPx(x) => self.layout_style.max_size.height = Dimension::Points(x),
+            ViewAttr::MaxWidthPct(x) => self.layout_style.max_size.width = Dimension::Percent(x),
+            ViewAttr::MaxHeightPct(x) => self.layout_style.max_size.height = Dimension::Percent(x),
+            ViewAttr::MarginPx(start, top, end, bottom) => {
                 self.layout_style.margin = Rect {
                     start: Dimension::Points(start),
                     top: Dimension::Points(top),
@@ -315,7 +353,7 @@ impl ViewBuilder {
                     bottom: Dimension::Points(bottom),
                 };
             }
-            StyleAttr::PaddingPx(start, top, end, bottom) => { 
+            ViewAttr::PaddingPx(start, top, end, bottom) => {
                 self.layout_style.padding = Rect {
                     start: Dimension::Points(start),
                     top: Dimension::Points(top),
@@ -323,7 +361,7 @@ impl ViewBuilder {
                     bottom: Dimension::Points(bottom),
                 };
             }
-            StyleAttr::MarginPct(start, top, end, bottom) => { 
+            ViewAttr::MarginPct(start, top, end, bottom) => {
                 self.layout_style.margin = Rect {
                     start: Dimension::Percent(start),
                     top: Dimension::Percent(top),
@@ -331,7 +369,7 @@ impl ViewBuilder {
                     bottom: Dimension::Percent(bottom),
                 };
             }
-            StyleAttr::PaddingPct(start, top, end, bottom) => { 
+            ViewAttr::PaddingPct(start, top, end, bottom) => {
                 self.layout_style.padding = Rect {
                     start: Dimension::Percent(start),
                     top: Dimension::Percent(top),
@@ -339,17 +377,32 @@ impl ViewBuilder {
                     bottom: Dimension::Percent(bottom),
                 };
             }
-            StyleAttr::Margin(start, top, end, bottom) => {
-                self.layout_style.margin = Rect { start, top, end, bottom }
+            ViewAttr::Margin(start, top, end, bottom) => {
+                self.layout_style.margin = Rect {
+                    start,
+                    top,
+                    end,
+                    bottom,
+                }
             }
-            StyleAttr::Padding(start, top, end, bottom) => {
-                self.layout_style.padding = Rect { start, top, end, bottom }
+            ViewAttr::Padding(start, top, end, bottom) => {
+                self.layout_style.padding = Rect {
+                    start,
+                    top,
+                    end,
+                    bottom,
+                }
             }
-            StyleAttr::Overflow(x) => { self.layout_style.overflow = x}
-            StyleAttr::Position(start, top, end, bottom) => {
-                self.layout_style.position = Rect { start, top, end, bottom }
+            ViewAttr::Overflow(x) => self.layout_style.overflow = x,
+            ViewAttr::Position(start, top, end, bottom) => {
+                self.layout_style.position = Rect {
+                    start,
+                    top,
+                    end,
+                    bottom,
+                }
             }
-            StyleAttr::PositionPx(start, top, end, bottom) => { 
+            ViewAttr::PositionPx(start, top, end, bottom) => {
                 self.layout_style.position = Rect {
                     start: Dimension::Points(start),
                     top: Dimension::Points(top),
@@ -357,7 +410,7 @@ impl ViewBuilder {
                     bottom: Dimension::Points(bottom),
                 };
             }
-            StyleAttr::PositionPct(start, top, end, bottom) => { 
+            ViewAttr::PositionPct(start, top, end, bottom) => {
                 self.layout_style.position = Rect {
                     start: Dimension::Percent(start),
                     top: Dimension::Percent(top),
@@ -365,26 +418,31 @@ impl ViewBuilder {
                     bottom: Dimension::Percent(bottom),
                 };
             }
-            StyleAttr::PositionType(x) => { self.layout_style.position_type = x }
+            ViewAttr::PositionType(x) => self.layout_style.position_type = x,
+            ViewAttr::Text(s) => {
+                self.text = Some(s);
+            }
+            ViewAttr::FontSize(x) => self.style.font_size = Some(x),
+            ViewAttr::LineHeight(x) => self.style.line_height = Some(x),
         }
         self.clone()
     }
 
-    pub fn style_if(&mut self, attr: StyleAttr, condition: bool) -> ViewBuilder {
+    pub fn attr_if(&mut self, attr: ViewAttr, condition: bool) -> ViewBuilder {
         if condition {
-            self.style(attr);
+            self.attr(attr);
         }
         self.clone()
     }
 
-    pub fn class(&mut self, attrs: &[StyleAttr]) -> ViewBuilder {
+    pub fn class(&mut self, attrs: &[ViewAttr]) -> ViewBuilder {
         for s in attrs.iter() {
-            self.style(*s);
+            self.attr(s.clone());
         }
         self.clone()
     }
 
-    pub fn class_if(&mut self, class: &[StyleAttr], condition: bool) -> ViewBuilder {
+    pub fn class_if(&mut self, class: &[ViewAttr], condition: bool) -> ViewBuilder {
         if condition {
             self.class(class);
         }
@@ -403,9 +461,21 @@ impl ViewBuilder {
         self.clone()
     }
 
+    pub fn text(&mut self, s: &str) -> ViewBuilder {
+        self.style.text = Some(s.into());
+        self.clone()
+    }
+
+    pub fn text_if(&mut self, s: &str, condition: bool) -> ViewBuilder {
+        if condition {
+            self.style.text = Some(s.into());
+        }
+        self.clone()
+    }
+
     fn build(&self) -> UINode {
         UINode::new(
-            UINodeType::View(self.style),
+            UINodeType::View(self.style.clone()),
             self.layout_style,
             self.child_nodes.iter().map(|child| child.build()).collect(),
         )
@@ -418,14 +488,14 @@ pub fn view() -> ViewBuilder {
         layout_style: Style::default(),
         child_nodes: vec![],
         style: ViewStyle::default(),
-        // name: String::from(name)
+        text: None, // name: String::from(name)
     }
 }
 
 #[macro_export]
 macro_rules! define_class {
     ($name:ident, [$($attributes:expr),*]) => (
-        static $name: &'static [StyleAttr] = &[
+        static $name: &'static [ViewAttr] = &[
             $(
                 $attributes,
             )*
@@ -435,10 +505,9 @@ macro_rules! define_class {
 
 #[macro_export]
 macro_rules! ui_tree {
-    ($body:expr) => (
-        $body
-        .clone()
-    )
+    ($body:expr) => {
+        $body.clone()
+    };
 }
 
 #[macro_export]
@@ -464,7 +533,7 @@ macro_rules! view {
                 .class($classnames)
             )*
             $(
-                .style($attrs)
+                .attr($attrs)
             )*
     );
     ([
@@ -479,7 +548,7 @@ macro_rules! view {
                 .class($classnames)
             )*
             $(
-                .style($attrs)
+                .attr($attrs)
             )*
             .children(&mut vec![
                 $(
