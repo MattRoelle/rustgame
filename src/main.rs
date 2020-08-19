@@ -10,9 +10,9 @@ use constants::*;
 use std::time::{SystemTime};
 use engine::*;
 use game::*;
-use game_scene::GameScene;
 use input::InputManager;
 use scene::Scene;
+use game_scene::GameScene;
 
 pub fn main() {
     let sdl_context = sdl2::init().unwrap();

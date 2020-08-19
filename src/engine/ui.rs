@@ -3,16 +3,36 @@ use stretch::{
     geometry::{Point, Rect, Size},
     node::Node,
     result::Layout,
-    style::{AlignContent, AlignItems, Dimension, FlexDirection, JustifyContent, Style},
+    style::{AlignContent, AlignItems, Dimension, FlexDirection, JustifyContent, Style, Overflow, PositionType, AlignSelf},
 };
 
-pub trait UIComponent {
-    type Props;
+pub struct UIComponent<Props, Actions>  where Props: Copy {
+    props: Props,
+    render: fn(props: Props) -> ViewBuilder,
+    on_action: fn(props: &mut Props, action: Actions),
+    graph: UIGraph,
+}
 
-    fn render(props: Self::Props) -> ViewBuilder;
-    fn set_ui_graph(&mut self, graph: UIGraph);
-    fn set_props(&mut self, props: Self::Props) {
-        self.set_ui_graph(UIGraph::new(Self::render(props).clone()))
+impl<Props, Actions> UIComponent<Props, Actions> where Props: Copy {
+    pub fn new(
+        initial_props: Props,
+        on_action: fn(props: &mut Props, action: Actions),
+        render: fn(props: Props) -> ViewBuilder) -> Self {
+        Self {
+            props: initial_props,
+            render,
+            on_action,
+            graph: UIGraph::new(render(initial_props).clone()),
+        }
+    }
+
+    pub fn dispatch(&mut self, action: Actions) {
+        (self.on_action)(&mut self.props, action);
+        self.graph = UIGraph::new((self.render)(self.props).clone());
+    }
+
+    pub fn draw(&mut self, canvas: &mut Canvas<Window>) {
+        self.graph.draw(canvas);
     }
 }
 
@@ -205,6 +225,8 @@ impl UINodeBuilder {
 pub enum StyleAttr {
     FlexDirection(FlexDirection),
     AlignItems(AlignItems),
+    AlignContent(AlignContent),
+    AlignSelf(AlignSelf),
     BgColorRGB(u8, u8, u8),
     JustifyContent(JustifyContent),
     BgColorRGBA(u8, u8, u8, u8),
@@ -222,12 +244,23 @@ pub enum StyleAttr {
     MinHeightPx(f32),
     MinWidthPct(f32),
     MinHeightPct(f32),
+    MaxWidth(Dimension),
+    MaxHeight(Dimension),
+    MaxWidthPx(f32),
+    MaxHeightPx(f32),
+    MaxWidthPct(f32),
+    MaxHeightPct(f32),
     MarginPx(f32, f32, f32, f32),
     PaddingPx(f32, f32, f32, f32),
     MarginPct(f32, f32, f32, f32),
     PaddingPct(f32, f32, f32, f32),
     Margin(Dimension, Dimension, Dimension, Dimension),
     Padding(Dimension, Dimension, Dimension, Dimension),
+    Overflow(Overflow),
+    PositionPx(f32, f32, f32, f32),
+    PositionPct(f32, f32, f32, f32),
+    Position(Dimension, Dimension, Dimension, Dimension),
+    PositionType(PositionType)
 }
 
 #[derive(Clone)]
@@ -249,29 +282,97 @@ impl ViewBuilder {
         match attr {
             StyleAttr::FlexDirection(x) => { self.layout_style.flex_direction = x }
             StyleAttr::AlignItems(x) => { self.layout_style.align_items = x }
+            StyleAttr::AlignContent(x) => { self.layout_style.align_content = x }
+            StyleAttr::AlignSelf(x) => { self.layout_style.align_self = x }
             StyleAttr::JustifyContent(x) => { self.layout_style.justify_content = x }
             StyleAttr::BgColorRGB(r, g, b) => { self.style.background_color = Some(Color::RGB(r, g, b)) }
-            StyleAttr::BgColorRGBA(_, _, _, _) => {}
-            StyleAttr::FlexBasis(_) => {}
-            StyleAttr::FlexGrow(_) => {}
-            StyleAttr::Width(_) => {}
-            StyleAttr::Height(_) => {}
+            StyleAttr::BgColorRGBA(r, g, b, a) => { self.style.background_color = Some(Color::RGBA(r, g, b, a))}
+            StyleAttr::FlexBasis(x) => { self.layout_style.flex_basis = x }
+            StyleAttr::FlexGrow(x) => { self.layout_style.flex_grow = x; }
+            StyleAttr::Width(x) => { self.layout_style.size.width = x}
+            StyleAttr::Height(x) => { self.layout_style.size.height = x}
             StyleAttr::WidthPx(x) => { self.layout_style.size.width = Dimension::Points(x) }
             StyleAttr::HeightPx(x) => { self.layout_style.size.height = Dimension::Points(x) }
-            StyleAttr::WidthPct(_) => {}
-            StyleAttr::HeightPct(_) => {}
-            StyleAttr::MinWidth(_) => {}
-            StyleAttr::MinHeight(_) => {}
-            StyleAttr::MinWidthPx(_) => {}
-            StyleAttr::MinHeightPx(_) => {}
-            StyleAttr::MinWidthPct(_) => {}
-            StyleAttr::MinHeightPct(_) => {}
-            StyleAttr::MarginPx(_, _, _, _) => {}
-            StyleAttr::PaddingPx(_, _, _, _) => {}
-            StyleAttr::MarginPct(_, _, _, _) => {}
-            StyleAttr::PaddingPct(_, _, _, _) => {}
-            StyleAttr::Margin(_, _, _, _) => {}
-            StyleAttr::Padding(_, _, _, _) => {}
+            StyleAttr::WidthPct(x) => { self.layout_style.size.width = Dimension::Percent(x)}
+            StyleAttr::HeightPct(x) => { self.layout_style.size.height = Dimension::Percent(x)}
+            StyleAttr::MinWidth(x) => { self.layout_style.min_size.width = x}
+            StyleAttr::MinHeight(x) => { self.layout_style.min_size.height = x}
+            StyleAttr::MinWidthPx(x) => { self.layout_style.min_size.width = Dimension::Points(x) }
+            StyleAttr::MinHeightPx(x) => { self.layout_style.min_size.height = Dimension::Points(x) }
+            StyleAttr::MinWidthPct(x) => { self.layout_style.min_size.width = Dimension::Percent(x)}
+            StyleAttr::MinHeightPct(x) => { self.layout_style.min_size.height = Dimension::Percent(x)}
+            StyleAttr::MaxWidth(x) => { self.layout_style.max_size.width = x}
+            StyleAttr::MaxHeight(x) => { self.layout_style.max_size.height = x}
+            StyleAttr::MaxWidthPx(x) => { self.layout_style.max_size.width = Dimension::Points(x) }
+            StyleAttr::MaxHeightPx(x) => { self.layout_style.max_size.height = Dimension::Points(x) }
+            StyleAttr::MaxWidthPct(x) => { self.layout_style.max_size.width = Dimension::Percent(x)}
+            StyleAttr::MaxHeightPct(x) => { self.layout_style.max_size.height = Dimension::Percent(x)}
+            StyleAttr::MarginPx(start, top, end, bottom) => { 
+                self.layout_style.margin = Rect {
+                    start: Dimension::Points(start),
+                    top: Dimension::Points(top),
+                    end: Dimension::Points(end),
+                    bottom: Dimension::Points(bottom),
+                };
+            }
+            StyleAttr::PaddingPx(start, top, end, bottom) => { 
+                self.layout_style.padding = Rect {
+                    start: Dimension::Points(start),
+                    top: Dimension::Points(top),
+                    end: Dimension::Points(end),
+                    bottom: Dimension::Points(bottom),
+                };
+            }
+            StyleAttr::MarginPct(start, top, end, bottom) => { 
+                self.layout_style.margin = Rect {
+                    start: Dimension::Percent(start),
+                    top: Dimension::Percent(top),
+                    end: Dimension::Percent(end),
+                    bottom: Dimension::Percent(bottom),
+                };
+            }
+            StyleAttr::PaddingPct(start, top, end, bottom) => { 
+                self.layout_style.padding = Rect {
+                    start: Dimension::Percent(start),
+                    top: Dimension::Percent(top),
+                    end: Dimension::Percent(end),
+                    bottom: Dimension::Percent(bottom),
+                };
+            }
+            StyleAttr::Margin(start, top, end, bottom) => {
+                self.layout_style.margin = Rect { start, top, end, bottom }
+            }
+            StyleAttr::Padding(start, top, end, bottom) => {
+                self.layout_style.padding = Rect { start, top, end, bottom }
+            }
+            StyleAttr::Overflow(x) => { self.layout_style.overflow = x}
+            StyleAttr::Position(start, top, end, bottom) => {
+                self.layout_style.position = Rect { start, top, end, bottom }
+            }
+            StyleAttr::PositionPx(start, top, end, bottom) => { 
+                self.layout_style.position = Rect {
+                    start: Dimension::Points(start),
+                    top: Dimension::Points(top),
+                    end: Dimension::Points(end),
+                    bottom: Dimension::Points(bottom),
+                };
+            }
+            StyleAttr::PositionPct(start, top, end, bottom) => { 
+                self.layout_style.position = Rect {
+                    start: Dimension::Percent(start),
+                    top: Dimension::Percent(top),
+                    end: Dimension::Percent(end),
+                    bottom: Dimension::Percent(bottom),
+                };
+            }
+            StyleAttr::PositionType(x) => { self.layout_style.position_type = x }
+        }
+        self
+    }
+
+    pub fn style_if(&mut self, attr: StyleAttr, condition: bool) -> &mut ViewBuilder {
+        if condition {
+            self.style(attr);
         }
         self
     }
@@ -279,6 +380,13 @@ impl ViewBuilder {
     pub fn class(&mut self, attrs: &[StyleAttr]) -> &mut ViewBuilder {
         for s in attrs.iter() {
             self.style(*s);
+        }
+        self
+    }
+
+    pub fn class_if(&mut self, class: &[StyleAttr], condition: bool) -> &mut ViewBuilder {
+        if condition {
+            self.class(class);
         }
         self
     }
@@ -314,25 +422,69 @@ pub fn view() -> ViewBuilder {
     }
 }
 
-/* Components */
-// -#[macro_export]
-// -macro_rules! block {
-// -    ([$($k:tt => $v:expr),+]) => (
-// -        view()
-// -            $(
-// -                .$k($v)
-// -            )*
-// -    );
-// -    ([$($k:tt => $v:expr),+], [$($children:expr),*]) => (
-// -        view()
-// -            $(
-// -                .$k($v)
-// -            )*
-// -            .children(&mut vec![
-// -                $(
-// -                    $children
-// -                )*,
-// -            ])
-// -    );
-// -}
-// diff --git a/src/ga
+#[macro_export]
+macro_rules! define_class {
+    ($name:ident, [$($attributes:expr),*]) => (
+        static $name: &'static [StyleAttr] = &[
+            $(
+                $attributes,
+            )*
+        ];
+    )
+}
+
+#[macro_export]
+macro_rules! ui_tree {
+    ($body:expr) => (
+        $body
+        .clone()
+    )
+}
+
+#[macro_export]
+macro_rules! view {
+    () => (
+        view()
+    );
+    ([
+        $($classnames:ident),*
+    ]) => (
+        view()
+            $(
+                .class($classnames)
+            )*
+    );
+    ([
+        $($classnames:ident),*
+    ], [
+        $($attrs:expr),*
+    ]) => (
+        view()
+            $(
+                .class($classnames)
+            )*
+            $(
+                .style($attrs)
+            )*
+    );
+    ([
+        $($classnames:ident),*
+    ], [
+        $($attrs:expr),*
+    ], [
+        $($children:expr),*
+    ]) => (
+        view()
+            $(
+                .class($classnames)
+            )*
+            $(
+                .style($attrs)
+            )*
+            .children(&mut vec![
+                $(
+                    $children
+                )*,
+            ])
+    );
+}
