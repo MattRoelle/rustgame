@@ -1,10 +1,11 @@
 use bytebuffer::ByteBuffer;
 use sdl2::{
     image::LoadTexture,
-    render::{Texture, TextureCreator},
-    video::WindowContext,
+    render::{Texture, TextureCreator, Canvas},
+    video::{Window, WindowContext}, ttf::{Font, Sdl2TtfContext},
 };
 use std::io::BufReader;
+use crate::engine::text::TextAtlas;
 
 extern crate sdl2;
 
@@ -15,9 +16,14 @@ pub struct Assets<'a> {
     pub green_rect: Texture<'a>,
     pub tilemap: Texture<'a>,
     pub test_level: tiled::Map,
+    pub font: TextAtlas<'a>
 }
 
-pub fn init<'a>(texture_creator: &'a TextureCreator<WindowContext>) -> Result<Assets<'a>, String> {
+pub fn init<'a>(
+    canvas: &mut Box<Canvas<Window>>,
+    texture_creator: &'a TextureCreator<WindowContext>,
+    ttf_context: &'a Sdl2TtfContext
+) -> Result<Assets<'a>, String> {
     Ok(Assets {
         white_rect: texture_creator.load_texture("./resources/white_rect.png")?,
         blue_rect: texture_creator.load_texture("./resources/blue_rect.png")?,
@@ -27,5 +33,12 @@ pub fn init<'a>(texture_creator: &'a TextureCreator<WindowContext>) -> Result<As
         test_level: tiled::parse(BufReader::new(ByteBuffer::from_bytes(include_bytes!(
             "../../resources/test_level.tmx"
         )))).expect("Failed to load map"),
+        font: TextAtlas::new(
+            canvas,
+            texture_creator,
+            ttf_context,
+            "./resources/VCR_OSD_MONO_1.001.ttf",
+            128
+        )
     })
 }

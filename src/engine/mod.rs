@@ -4,3 +4,4 @@ pub mod sprite;
 pub mod input;
 pub mod tiles;
 pub mod ui;
+pub mod text;

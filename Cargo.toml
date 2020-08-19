@@ -14,4 +14,4 @@ stretch = "0.3.2"
 [dependencies.sdl2]
 version = "0.34"
 default-features = false
-features = ["image"]
+features = ["image", "ttf"]

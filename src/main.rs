@@ -5,7 +5,7 @@ mod engine;
 
 extern crate sdl2;
 
-use sdl2::{event::Event, image::{InitFlag}, keyboard::Keycode};
+use sdl2::{event::Event, image::{InitFlag}, keyboard::Keycode, ttf, pixels::Color, rect::Rect};
 use constants::*;
 use std::time::{SystemTime};
 use engine::*;
@@ -18,6 +18,7 @@ pub fn main() {
     let sdl_context = sdl2::init().unwrap();
     let video_subsystem = sdl_context.video().unwrap();
     let _image_context = sdl2::image::init(InitFlag::PNG | InitFlag::JPG).unwrap();
+    let ttf_context = ttf::init().map_err(|e| e.to_string()).unwrap();
 
     let window = video_subsystem.window("rust-sdl2 demo", SCREEN_WIDTH, SCREEN_HEIGHT)
         .position_centered()
@@ -25,18 +26,18 @@ pub fn main() {
         .build()
         .unwrap();
 
-    let mut canvas = window
+    let mut canvas = Box::new(window
         .into_canvas()
         .present_vsync()
         .build()
-        .unwrap();
+        .unwrap());
 
     canvas
         .set_logical_size(SCREEN_WIDTH, SCREEN_HEIGHT)
         .expect("Error setting canvas logical size");
 
     let texture_creator = canvas.texture_creator();
-    let assets = assets::init(&texture_creator).expect("Failed to load assets");
+    let mut assets = assets::init(&mut canvas, &texture_creator, &ttf_context).expect("Failed to load assets");
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut scene = GameScene::new(&assets);
@@ -63,6 +64,7 @@ pub fn main() {
 
         canvas.set_draw_color((0, 0, 0));
         canvas.clear();
+        assets.font.draw_str(&mut canvas, "This is a test. Lorum ipsum dolor set amut.", 100, 100, 300, 300, 0.5, 1.0);
 
         for event in event_pump.poll_iter() {
             match event {
@@ -80,8 +82,8 @@ pub fn main() {
             }
         }
 
-        scene.update(input_manager.collect_game_inputs(), last_tick_t.unwrap(), dt);
-        scene.render(&mut canvas);
+        // scene.update(input_manager.collect_game_inputs(), last_tick_t.unwrap(), dt);
+        // scene.render(&mut canvas);
 
         canvas.present();
     }

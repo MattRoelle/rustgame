@@ -22,4 +22,7 @@ echo "Converting Aseprite (.ase) files"
 echo "Copying tmx files"
 cp -r ./assets/*.tmx ./resources/
 
+echo "Copying ttf files"
+cp -r ./assets/*.ttf ./resources/
+
 echo "Done"
