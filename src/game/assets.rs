@@ -2,7 +2,7 @@ use bytebuffer::ByteBuffer;
 use sdl2::{
     image::LoadTexture,
     render::{Texture, TextureCreator, Canvas},
-    video::{Window, WindowContext}, ttf::{Font, Sdl2TtfContext},
+    video::{Window, WindowContext}, ttf::{Sdl2TtfContext},
 };
 use std::io::BufReader;
 use crate::engine::text::FontAtlas;

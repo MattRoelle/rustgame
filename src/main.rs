@@ -1,3 +1,5 @@
+#![allow(unused_variables)]
+#![allow(unused_imports)]
 #![allow(dead_code)]
 
 mod game;
@@ -42,7 +44,7 @@ pub fn main() {
         .expect("Error setting canvas logical size");
 
     let texture_creator = canvas.texture_creator();
-    let mut assets = assets::init(&mut canvas, &texture_creator, &ttf_context).expect("Failed to load assets");
+    let assets = assets::init(&mut canvas, &texture_creator, &ttf_context).expect("Failed to load assets");
 
     let mut event_pump = sdl_context.event_pump().unwrap();
     let mut scene = GameScene::new(assets);
