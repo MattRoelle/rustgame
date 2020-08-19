@@ -201,100 +201,33 @@ impl UINodeBuilder {
     }
 }
 
-pub trait LayoutStyleBuilder {
-    fn layout_style(&mut self) -> &mut Style;
-    fn flex_direction(&mut self, flex_direction: FlexDirection) -> &mut Self {
-        self.layout_style().flex_direction = flex_direction;
-        self
-    }
-    fn align_items(&mut self, align_items: AlignItems) -> &mut Self {
-        self.layout_style().align_items = align_items;
-        self
-    }
-    fn align_content(&mut self, align_content: AlignContent) -> &mut Self {
-        self.layout_style().align_content = align_content;
-        self
-    }
-    fn justify_content(&mut self, justify_content: JustifyContent) -> &mut Self {
-        self.layout_style().justify_content = justify_content;
-        self
-    }
-    fn flex_basis(&mut self, flex_basis: Dimension) -> &mut Self {
-        self.layout_style().flex_basis = flex_basis;
-        self
-    }
-    fn flex_grow(&mut self, flex_grow: f32) -> &mut Self {
-        self.layout_style().flex_grow = flex_grow;
-        self
-    }
-    fn width_px(&mut self, width: f32) -> &mut Self {
-        self.layout_style().size.width = Dimension::Points(width);
-        self
-    }
-    fn width_pc(&mut self, width: f32) -> &mut Self {
-        self.layout_style().size.width = Dimension::Percent(width);
-        self
-    }
-    fn height_px(&mut self, height: f32) -> &mut Self {
-        self.layout_style().size.height = Dimension::Points(height);
-        self
-    }
-    fn height_pc(&mut self, height: f32) -> &mut Self {
-        self.layout_style().size.height = Dimension::Percent(height);
-        self
-    }
-    fn min_width_px(&mut self, min_width: f32) -> &mut Self {
-        self.layout_style().min_size.width = Dimension::Points(min_width);
-        self
-    }
-    fn min_width_pc(&mut self, min_width: f32) -> &mut Self {
-        self.layout_style().min_size.width = Dimension::Percent(min_width);
-        self
-    }
-    fn min_height_px(&mut self, min_height: f32) -> &mut Self {
-        self.layout_style().min_size.height = Dimension::Points(min_height);
-        self
-    }
-    fn min_height_pc(&mut self, min_height: f32) -> &mut Self {
-        self.layout_style().min_size.height = Dimension::Percent(min_height);
-        self
-    }
-    fn margin_pt(&mut self, start: f32, top: f32, end: f32, bottom: f32) -> &mut Self {
-        self.layout_style().margin = Rect {
-            start: Dimension::Points(start),
-            top: Dimension::Points(top),
-            end: Dimension::Points(end),
-            bottom: Dimension::Points(bottom),
-        };
-        self
-    }
-    fn margin_pt_all(&mut self, v: f32) -> &mut Self {
-        self.layout_style().margin = Rect {
-            start: Dimension::Points(v),
-            top: Dimension::Points(v),
-            end: Dimension::Points(v),
-            bottom: Dimension::Points(v),
-        };
-        self
-    }
-    fn padding_pt(&mut self, start: f32, top: f32, end: f32, bottom: f32) -> &mut Self {
-        self.layout_style().padding = Rect {
-            start: Dimension::Points(start),
-            top: Dimension::Points(top),
-            end: Dimension::Points(end),
-            bottom: Dimension::Points(bottom),
-        };
-        self
-    }
-    fn padding_pt_all(&mut self, v: f32) -> &mut Self {
-        self.layout_style().padding = Rect {
-            start: Dimension::Points(v),
-            top: Dimension::Points(v),
-            end: Dimension::Points(v),
-            bottom: Dimension::Points(v),
-        };
-        self
-    }
+#[derive(Debug, Copy, Clone)]
+pub enum StyleAttr {
+    FlexDirection(FlexDirection),
+    AlignItems(AlignItems),
+    BgColorRGB(u8, u8, u8),
+    JustifyContent(JustifyContent),
+    BgColorRGBA(u8, u8, u8, u8),
+    FlexBasis(Dimension),
+    FlexGrow(f32),
+    Width(Dimension),
+    Height(Dimension),
+    WidthPx(f32),
+    HeightPx(f32),
+    WidthPct(f32),
+    HeightPct(f32),
+    MinWidth(Dimension),
+    MinHeight(Dimension),
+    MinWidthPx(f32),
+    MinHeightPx(f32),
+    MinWidthPct(f32),
+    MinHeightPct(f32),
+    MarginPx(f32, f32, f32, f32),
+    PaddingPx(f32, f32, f32, f32),
+    MarginPct(f32, f32, f32, f32),
+    PaddingPct(f32, f32, f32, f32),
+    Margin(Dimension, Dimension, Dimension, Dimension),
+    Padding(Dimension, Dimension, Dimension, Dimension),
 }
 
 #[derive(Clone)]
@@ -311,23 +244,42 @@ impl Into<UINodeBuilder> for ViewBuilder {
     }
 }
 
-impl LayoutStyleBuilder for ViewBuilder {
-    fn layout_style(&mut self) -> &mut Style {
-        &mut self.layout_style
-    }
-}
-
 impl ViewBuilder {
-    pub fn bg_color(&mut self, color: Color) -> &mut ViewBuilder {
-        self.style.background_color = Some(color);
+    pub fn style(&mut self, attr: StyleAttr) -> &mut ViewBuilder {
+        match attr {
+            StyleAttr::FlexDirection(x) => { self.layout_style.flex_direction = x }
+            StyleAttr::AlignItems(x) => { self.layout_style.align_items = x }
+            StyleAttr::JustifyContent(x) => { self.layout_style.justify_content = x }
+            StyleAttr::BgColorRGB(r, g, b) => { self.style.background_color = Some(Color::RGB(r, g, b)) }
+            StyleAttr::BgColorRGBA(_, _, _, _) => {}
+            StyleAttr::FlexBasis(_) => {}
+            StyleAttr::FlexGrow(_) => {}
+            StyleAttr::Width(_) => {}
+            StyleAttr::Height(_) => {}
+            StyleAttr::WidthPx(x) => { self.layout_style.size.width = Dimension::Points(x) }
+            StyleAttr::HeightPx(x) => { self.layout_style.size.height = Dimension::Points(x) }
+            StyleAttr::WidthPct(_) => {}
+            StyleAttr::HeightPct(_) => {}
+            StyleAttr::MinWidth(_) => {}
+            StyleAttr::MinHeight(_) => {}
+            StyleAttr::MinWidthPx(_) => {}
+            StyleAttr::MinHeightPx(_) => {}
+            StyleAttr::MinWidthPct(_) => {}
+            StyleAttr::MinHeightPct(_) => {}
+            StyleAttr::MarginPx(_, _, _, _) => {}
+            StyleAttr::PaddingPx(_, _, _, _) => {}
+            StyleAttr::MarginPct(_, _, _, _) => {}
+            StyleAttr::PaddingPct(_, _, _, _) => {}
+            StyleAttr::Margin(_, _, _, _) => {}
+            StyleAttr::Padding(_, _, _, _) => {}
+        }
         self
     }
-    pub fn border_color(&mut self, color: Color) -> &mut ViewBuilder {
-        self.style.border_color = Some(color);
-        self
-    }
-    pub fn border_width(&mut self, width: i32) -> &mut ViewBuilder {
-        self.style.border_width = Some(width);
+
+    pub fn class(&mut self, attrs: &[StyleAttr]) -> &mut ViewBuilder {
+        for s in attrs.iter() {
+            self.style(*s);
+        }
         self
     }
 
@@ -344,7 +296,6 @@ impl ViewBuilder {
     }
 
     fn build(&self) -> UINode {
-        // UINode::new(self.name.clone(), UINodeType::View(self.style), self.layout_style, self.child_nodes.iter().map(|child| { child.build() }).collect())
         UINode::new(
             UINodeType::View(self.style),
             self.layout_style,
@@ -364,21 +315,24 @@ pub fn view() -> ViewBuilder {
 }
 
 /* Components */
-#[macro_export]
-macro_rules! fullscreen {
-    () => {
-        view()
-            .width_px(SCREEN_WIDTH as f32)
-            .height_px(SCREEN_HEIGHT as f32)
-    };
-}
-
-#[macro_export]
-macro_rules! block {
-    ($r:expr,$g:expr,$b:expr) => {
-        view()
-            .flex_grow(1.0)
-            .bg_color(Color::RGB($r, $g, $b))
-            .margin_pt_all(5.0)
-    };
-}
+// -#[macro_export]
+// -macro_rules! block {
+// -    ([$($k:tt => $v:expr),+]) => (
+// -        view()
+// -            $(
+// -                .$k($v)
+// -            )*
+// -    );
+// -    ([$($k:tt => $v:expr),+], [$($children:expr),*]) => (
+// -        view()
+// -            $(
+// -                .$k($v)
+// -            )*
+// -            .children(&mut vec![
+// -                $(
+// -                    $children
+// -                )*,
+// -            ])
+// -    );
+// -}
+// diff --git a/src/ga
