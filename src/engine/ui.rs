@@ -1,4 +1,4 @@
-use super::text::FontAtlas;
+use super::{rendering::Drawable, text::FontAtlas};
 use sdl2::{pixels::Color, render::Canvas, video::Window};
 use stretch::{
     geometry::{Point, Rect, Size},
@@ -41,8 +41,13 @@ where
         (self.on_action)(&mut self.props, action);
         self.graph = UIGraph::new((self.render)(self.props).clone());
     }
+}
 
-    pub fn draw<'a>(&mut self, canvas: &mut Canvas<Window>, font_atlas: &mut FontAtlas<'a>) {
+impl<Props, Actions> Drawable for UIComponent<Props, Actions>
+where
+   Props: Copy
+{
+    fn draw<'a>(&mut self, canvas: &mut Canvas<Window>, font_atlas: &mut FontAtlas<'a>) {
         self.graph.draw(canvas, font_atlas);
     }
 }

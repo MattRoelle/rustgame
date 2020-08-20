@@ -6,3 +6,4 @@ pub mod tiles;
 pub mod ui;
 pub mod text;
 pub mod physics;
+pub mod rendering;

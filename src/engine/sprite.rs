@@ -3,6 +3,7 @@ use sdl2::{
     render::{Canvas, Texture},
     video::Window,
 };
+use super::{text::FontAtlas, rendering::Drawable};
 
 pub struct Sprite<'a> {
     tex: &'a Texture<'a>,
@@ -63,7 +64,14 @@ impl<'a> Sprite<'a> {
         ));
     }
 
-    pub fn draw(&self, canvas: &mut Canvas<Window>) {
+    pub fn clamp(&mut self, min_x: f64, min_y: f64, max_x: f64, max_y: f64) {
+        self.rect.clamp(min_x, min_y, max_x, max_y);
+        self.update_sdl_rect();
+    }
+}
+
+impl Drawable for Sprite<'_> {
+    fn draw<'a>(&mut self, canvas: &mut Canvas<Window>, font_atlas: &mut FontAtlas<'a>) {
         canvas
             .copy_ex(
                 &self.tex,
@@ -75,10 +83,5 @@ impl<'a> Sprite<'a> {
                 self.flip_vertical,
             )
             .expect("Error calling canvas.copy_ex")
-    }
-
-    pub fn clamp(&mut self, min_x: f64, min_y: f64, max_x: f64, max_y: f64) {
-        self.rect.clamp(min_x, min_y, max_x, max_y);
-        self.update_sdl_rect();
     }
 }

@@ -3,6 +3,7 @@ use sdl2::{
     video::Window,
 };
 use crate::geometry::Vec2;
+use super::{text::FontAtlas, rendering::Drawable};
 
 pub struct Tilemap<'a> {
     map: tiled::Map,
@@ -79,8 +80,10 @@ impl<'a> Tilemap<'a> {
 
         return sdl_rects;
     }
+}
 
-    pub fn draw(&self, canvas: &mut Canvas<Window>) {
+impl Drawable for Tilemap<'_> {
+    fn draw<'a>(&mut self, canvas: &mut Canvas<Window>, font_atlas: &mut FontAtlas<'a>) {
         for pair in self.sdl_rects.iter() {
             canvas.copy(&self.tileset.texture, pair.0, pair.1).expect("canvas.copy call failed")
         }
