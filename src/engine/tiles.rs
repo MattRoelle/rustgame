@@ -5,7 +5,7 @@ use sdl2::{
 use crate::geometry::Vec2;
 
 pub struct Tilemap<'a> {
-    map: &'a tiled::Map,
+    map: tiled::Map,
     tileset: Tileset<'a>,
     sdl_rects: Vec<(sdl2::rect::Rect, sdl2::rect::Rect)>,
     pos: Vec2
@@ -50,17 +50,17 @@ impl<'a> Tilemap<'a> {
 
         Self {
             pos: Vec2::new(x, y),
-            map,
-            sdl_rects: Tilemap::get_sdl_rects(x, y, map, &tileset),
+            map: map.clone(),
+            sdl_rects: Tilemap::get_sdl_rects(x, y, map.clone(), &tileset),
             tileset
         }
     }
 
     fn update_sdl_rects(&mut self) {
-        self.sdl_rects = Tilemap::get_sdl_rects(self.pos.x, self.pos.y, &self.map, &self.tileset);
+        self.sdl_rects = Tilemap::get_sdl_rects(self.pos.x, self.pos.y, self.map.clone(), &self.tileset);
     }
 
-    fn get_sdl_rects(x: f64, y: f64, map: &'a tiled::Map, tileset: &Tileset) -> Vec<(sdl2::rect::Rect, sdl2::rect::Rect)> {
+    fn get_sdl_rects(x: f64, y: f64, map: tiled::Map, tileset: &Tileset) -> Vec<(sdl2::rect::Rect, sdl2::rect::Rect)> {
         let mut sdl_rects = Vec::new();
 
         for layer in map.layers.iter() {

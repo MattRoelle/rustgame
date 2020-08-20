@@ -47,7 +47,7 @@ pub fn main() {
     let assets = assets::init(&mut canvas, &texture_creator, &ttf_context).expect("Failed to load assets");
 
     let mut event_pump = sdl_context.event_pump().unwrap();
-    let mut scene = GameScene::new(assets);
+    let mut scene = GameScene::new(&assets);
     let mut input_manager = InputManager::new();
 
     let now = SystemTime::now();
