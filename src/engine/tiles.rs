@@ -23,7 +23,7 @@ pub struct Tileset<'a> {
 }
 
 impl<'a> Tilemap<'a> {
-    pub fn new(x: f64, y: f64, map: &'a tiled::Map, tileset_texture: &'a Texture<'a>) -> Self {
+    pub fn new(x: f64, y: f64, map: &'a mut tiled::Map, tileset_texture: &'a Texture<'a>) -> Self {
         let map_tileset = &map.tilesets[0];
         let img = map_tileset.images.first().expect("No associated image in the tileset");
         let tile_width = map_tileset.tile_width;

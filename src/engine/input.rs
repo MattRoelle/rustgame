@@ -6,6 +6,7 @@ pub enum GameInput {
     Jump,
     Up,
     Down,
+    Other(Keycode),
     None,
 }
 
@@ -38,8 +39,10 @@ impl InputManager {
             }
             Keycode::Down | Keycode::S => {
                 self.inputs.push(GameInput::Down)
+            },
+            _ => {
+                self.inputs.push(GameInput::Other(keycode));
             }
-            _ => {}
         }
     }
 

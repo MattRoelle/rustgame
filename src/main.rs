@@ -4,18 +4,20 @@
 
 mod game;
 mod engine;
+mod editor;
+mod constants;
 
 extern crate sdl2;
 
 use sdl2::{event::Event, image::{InitFlag}, keyboard::Keycode, ttf, pixels::Color, rect::Rect};
-use constants::*;
 use std::time::{SystemTime};
 use engine::*;
 use game::*;
 use input::InputManager;
 use scene::Scene;
-use game_scene::GameScene;
 use assets::Assets;
+use constants::*;
+use rendering::Drawable;
 
 #[macro_use]
 extern crate lazy_static;
@@ -47,11 +49,12 @@ pub fn main() {
     let mut assets = assets::init(&mut canvas, &texture_creator, &ttf_context).expect("Failed to load assets");
 
     let mut event_pump = sdl_context.event_pump().unwrap();
-    let mut scene = GameScene::new(&mut assets);
     let mut input_manager = InputManager::new();
 
     let now = SystemTime::now();
     let mut last_tick_t: Option<u128> = None;
+
+    let mut game_editor = editor::Editor::new();
 
     'running: loop {
         let dt: f64;
@@ -89,8 +92,12 @@ pub fn main() {
             }
         }
 
-        scene.update(input_manager.collect_game_inputs(), last_tick_t.unwrap(), dt);
-        scene.render(&mut canvas);
+        let t = last_tick_t.unwrap();
+
+        let inputs = input_manager.collect_game_inputs();
+
+        game_editor.update(inputs);
+        game_editor.ui.draw(&mut canvas, &mut assets.font);
 
         canvas.present();
     }
