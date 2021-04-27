@@ -45,7 +45,7 @@ where
 
 impl<Props, Actions> Drawable for UIComponent<Props, Actions>
 where
-   Props: Copy
+    Props: Copy,
 {
     fn draw<'a>(&mut self, canvas: &mut Canvas<Window>, font_atlas: &mut FontAtlas<'a>) {
         self.graph.draw(canvas, font_atlas);

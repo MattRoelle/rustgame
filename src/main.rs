@@ -5,6 +5,7 @@
 mod game;
 mod engine;
 mod editor;
+mod game_object_types;
 mod constants;
 
 extern crate sdl2;
@@ -54,7 +55,7 @@ pub fn main() {
     let now = SystemTime::now();
     let mut last_tick_t: Option<u128> = None;
 
-    let mut game_editor = editor::Editor::new();
+    // let mut game_editor = editor::Editor::new();
 
     'running: loop {
         let dt: f64;
@@ -96,8 +97,8 @@ pub fn main() {
 
         let inputs = input_manager.collect_game_inputs();
 
-        game_editor.update(inputs);
-        game_editor.ui.draw(&mut canvas, &mut assets.font);
+        // game_editor.update(inputs);
+        // game_editor.ui.draw(&mut canvas, &mut assets.font);
 
         canvas.present();
     }

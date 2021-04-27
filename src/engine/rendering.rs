@@ -38,4 +38,8 @@ impl RenderList {
             }
         }
     }
+
+    pub fn clear(&mut self) {
+        self.items.clear();
+    }
 }
